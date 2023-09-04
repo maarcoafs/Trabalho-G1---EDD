@@ -1,73 +1,99 @@
-class Node:
-    def __init__(self, name, contact):
-    self.name = name
-    self.contact = contact
-    self.next = None
-    
+import csv
+
+class Contato:
+    def __init__(self, nome, telefone):
+        self.nome = nome
+        self.telefone = telefone
+
 class AgendaHeroes:
     def __init__(self):
-        self.table = [None] * 26
-    def hash(self, key):
-        return ord(key[0].upper()) - ord('A')
-    
-    def add_contact(self, name, contact):
-        index = self.hash(name)
-        if not self.table[index]:
-            self.table[index] = Node(name, contact)
-        else:
-            curr = self.table[index]
-            while curr.next:
-                curr = curr.next
-            curr.next = Node(name, contact)
-            
-    def search_contact(self, name):
-        index = self.hash(name)
-        curr = self.table[index]
-        while curr:
-            if curr.name == name:
-                return curr.contact
-            curr = curr.next
+        self.tabela_hash = [[] for _ in range(26)]  # Inicializa a tabela hash com 26 listas vazias
+
+    def calcular_indice(self, letra):
+        # Converte a letra para um número (A=0, B=1, ..., Z=25)
+        return ord(letra.upper()) - ord('A')
+
+    def adicionar_contato(self, contato):
+        indice = self.calcular_indice(contato.nome[0])
+        self.tabela_hash[indice].append(contato)
+
+    def buscar_contato(self, nome):
+        indice = self.calcular_indice(nome[0])
+        for contato in self.tabela_hash[indice]:
+            if contato.nome == nome:
+                return contato
         return None
-    
-    def list_contacts(self, letter):
-        index = self.hash(letter)
-        contacts = []
-        curr = self.table[index]
-        while curr:
-            contacts.append((curr.name, curr.contact))
-            curr = curr.next
-        return contacts
-    
-    def remove_contact(self, name):
-        index = self.hash(name)
-        if not self.table[index]:
-            return False
-        if self.table[index].name == name:
-            self.table[index] - self.table[index].next
-            return True
-        prev = self.table[index]
-        curr = prev.next
-        while curr:
-            if curr.name == name:
-                prev.next = curr.next
+
+    def listar_contatos_por_letra(self, letra):
+        indice = self.calcular_indice(letra)
+        return self.tabela_hash[indice]
+
+    def remover_contato(self, nome):
+        indice = self.calcular_indice(nome[0])
+        for contato in self.tabela_hash[indice]:
+            if contato.nome == nome:
+                self.tabela_hash[indice].remove(contato)
                 return True
-            prev = curr
-            curr = curr.next
         return False
-    
-def main():
+
+    def importar_contatos(self, arquivo):
+        with open(arquivo, mode='r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                nome, telefone = row
+                contato = Contato(nome, telefone)
+                self.adicionar_contato(contato)
+
+if __name__ == "__main__":
     agenda = AgendaHeroes()
-    # Adicionar contatos
-    agenda.add_contact('Superman', 'superman@heroes.com')
-    agenda.add_contact('Batman', 'batman@heroes.com')
-    agenda.add_contact('Spiderman', 'spiderman@heroes.com')
-    # Buscar contato por nome
-    print(agenda.search_contact('Superman'))
-    # Listar contatos por letra inícial
-    print(agenda.list_contacts('S'))
-    # Remover contato
-    print(agenda.remove_contact('Superman'))
-    print(agenda.search_contact('Superman'))
-    
-if __name__ == '__main__':
-    main()
+
+    # Importe os contatos do arquivo 'agenda.csv'
+    agenda.importar_contatos('agenda.csv')
+
+    while True:
+        print("\nMenu Interativo:")
+        print("1. Adicionar Contato")
+        print("2. Buscar Contato")
+        print("3. Listar Contatos por Letra")
+        print("4. Remover Contato")
+        print("5. Sair")
+
+        escolha = input("Escolha uma opção: ")
+
+        if escolha == "1":
+            nome = input("Nome do contato: ")
+            telefone = input("Telefone do contato: ")
+            contato = Contato(nome, telefone)
+            agenda.adicionar_contato(contato)
+            print("Contato adicionado com sucesso!")
+
+        elif escolha == "2":
+            nome = input("Digite o nome do contato que deseja buscar: ")
+            contato = agenda.buscar_contato(nome)
+            if contato:
+                print(f"Nome: {contato.nome}, Telefone: {contato.telefone}")
+            else:
+                print("Contato não encontrado.")
+
+        elif escolha == "3":
+            letra = input("Digite a letra inicial para listar os contatos: ")
+            contatos = agenda.listar_contatos_por_letra(letra)
+            if contatos:
+                for contato in contatos:
+                    print(f"Nome: {contato.nome}, Telefone: {contato.telefone}")
+            else:
+                print("Nenhum contato encontrado com essa letra inicial.")
+
+        elif escolha == "4":
+            nome = input("Digite o nome do contato que deseja remover: ")
+            if agenda.remover_contato(nome):
+                print(f"Contato {nome} removido com sucesso!")
+            else:
+                print("Contato não encontrado.")
+
+        elif escolha == "5":
+            print("Saindo do programa.")
+            break
+
+        else:
+            print("Opção inválida. Tente novamente.")
